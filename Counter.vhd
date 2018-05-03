@@ -1,0 +1,123 @@
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.std_logic_unsigned.all;
+
+entity counter is
+port (pb_1, pb_2, clk : in std_logic;
+	seven_segment: out std_logic_vector(6 downto 0);
+	seven_segment2: out std_logic_vector(6 downto 0));
+end counter;
+
+architecture sequential of counter is
+constant D0 : std_logic_vector(6 downto 0):="1000000";
+constant D1 : std_logic_vector(6 downto 0):="1111001";
+constant D2 : std_logic_vector(6 downto 0):="0100100";
+constant D3 : std_logic_vector(6 downto 0):="0110000";
+constant D4 : std_logic_vector(6 downto 0):="0011001";
+constant D5 : std_logic_vector(6 downto 0):="0010010";
+constant D6 : std_logic_vector(6 downto 0):="0000010";
+constant D7 : std_logic_vector(6 downto 0):="1111000";
+constant D8 : std_logic_vector(6 downto 0):="0000000";
+constant D9 : std_logic_vector(6 downto 0):="0010000";
+constant DA : std_logic_vector(6 downto 0):="0001000";
+constant DB : std_logic_vector(6 downto 0):="0000011";
+constant DC : std_logic_vector(6 downto 0):="1000110";
+constant DD : std_logic_vector(6 downto 0):="0100001";
+constant DE : std_logic_vector(6 downto 0):="0000110";
+constant DF : std_logic_vector(6 downto 0):="0001110";
+constant DX : std_logic_vector(6 downto 0):="1111111";
+signal segment : std_logic_vector(6 downto 0);
+signal segment2 : std_logic_vector(6 downto 0);
+signal count : std_logic_vector(3 downto 0):= "0000";
+signal count2 : std_logic_vector(3 downto 0):= "0000";
+
+-- signal divided_clk, pb1, pb2 : std_logic;
+-- Warning: this will not work in ModelSim
+signal pb1, pb2 : std_logic;
+signal divided_clk : std_logic := '0';
+-- It is important to initialize value for ModelSim
+
+begin
+clock_divider: process (clk)
+variable clk_count: integer:=0;
+begin
+if(clk'event and clk = '1') then
+-- for simulation replace 12500000 with smaller number such as 2 or 4 to
+-- minimize simulation time
+	if clk_count = 25000000 then
+		divided_clk <= not divided_clk;
+		clk_count := 0;
+	else
+		clk_count := clk_count + 1;
+	end if;
+end if;
+end process;
+
+counter: process (divided_clk, pb1,pb2)
+begin
+if (pb2 = '0') then
+	count <= "0000";
+	count2 <= "0000";
+elsif (divided_clk'event and divided_clk = '1' and pb1 = '1') then
+	if (count = "1001") then
+		count <= "0000";
+			if (count2 = "0101") then
+				count2 <= "0000"; 
+			else count2 <= count2 + "0001";
+		end if;
+	else
+		count <= count + "0001";
+	end if;
+elsif (divided_clk'event and divided_clk = '1' and pb1 = '0') then
+	if (count = "0000") then
+		count <= "1001";
+			if (count2 = "0000") then
+				count2 <= "0101"; 
+			else count2 <= count2 - "0001";
+		end if;
+	else
+		count <= count - "0001";
+	end if;
+end if;
+end Process;
+
+display: process (count)
+begin
+
+case count is
+when "0000" => segment <= D0;
+when "0001" => segment <= D1;
+when "0010" => segment <= D2;
+when "0011" => segment <= D3;
+when "0100" => segment <= D4;
+when "0101" => segment <= D5;
+when "0110" => segment <= D6;
+when "0111" => segment <= D7;
+when "1000" => segment <= D8;
+when "1001" => segment <= D9;
+when others => segment <= DX;
+end case;
+end process;
+
+display2: process (count2)
+begin
+
+case count2 is
+when "0000" => segment2 <= D0;
+when "0001" => segment2 <= D1;
+when "0010" => segment2 <= D2;
+when "0011" => segment2 <= D3;
+when "0100" => segment2 <= D4;
+when "0101" => segment2 <= D5;
+when others => segment2 <= DX;
+end case;
+end process;
+
+
+--Signal Assignment
+pb1 <= pb_1;
+pb2 <= pb_2;
+seven_segment <= segment;
+seven_segment2 <= segment2;
+
+end architecture sequential;
